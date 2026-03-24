@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hướng Dẫn Tableau Dashboard – Global Superstore</title>
+<style>
+  :root {
+    --primary: #1a4a7a;
+    --accent: #e8760a;
+    --green: #1e8449;
+    --red: #c0392b;
+    --light-bg: #f4f7fb;
+    --border: #d0d7e2;
+    --text: #2c3e50;
+    --muted: #6c7a89;
+    --tag-bg: #eaf0fb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: var(--text); background: #fff; font-size: 14px; line-height: 1.6; }
+
+  /* NAV */
+  .sidebar { position: fixed; top: 0; left: 0; width: 240px; height: 100vh; background: var(--primary); overflow-y: auto; z-index: 100; padding: 20px 0; }
+  .sidebar-logo { color: #fff; font-size: 15px; font-weight: 700; padding: 0 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 12px; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-section { color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 8px 20px 4px; }
+  .nav-item { display: block; color: rgba(255,255,255,0.8); text-decoration: none; padding: 7px 20px; font-size: 13px; border-left: 3px solid transparent; transition: all 0.2s; }
+  .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left-color: var(--accent); color: #fff; }
+  .nav-badge { background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+
+  /* MAIN */
+  .main { margin-left: 240px; min-height: 100vh; }
+  .hero { background: linear-gradient(135deg, var(--primary) 0%, #2471a3 100%); color: #fff; padding: 48px 48px 40px; }
+  .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .hero p { opacity: 0.85; font-size: 15px; max-width: 600px; }
+  .hero-tags { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .hero-tag { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; }
+
+  .content { padding: 40px 48px; }
+
+  /* SECTION */
+  .section { margin-bottom: 56px; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 2px solid var(--border); }
+  .section-num { background: var(--primary); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .section-title { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .section-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* DASHBOARD CARD */
+  .db-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  .db-card-header { padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  .db-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .db-card-body { padding: 0 24px 24px; }
+  .db-title { font-size: 17px; font-weight: 700; }
+  .db-purpose { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* COLORS */
+  .blue { background: #ddeeff; }   .blue-icon { background: #1a4a7a; }
+  .orange { background: #fff0e0; } .orange-icon { background: #e8760a; }
+  .green-bg { background: #e8f8ef; } .green-icon { background: #1e8449; }
+  .purple { background: #f0e8ff; } .purple-icon { background: #7d3c98; }
+
+  /* STEP */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step::before { counter-increment: step; content: counter(step); background: var(--primary); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .step-desc { color: var(--muted); font-size: 13px; }
+  .step-code { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-family: 'Courier New', monospace; font-size: 12px; color: var(--primary); margin-top: 8px; }
+
+  /* CHARTS GRID */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .chart-card { background: var(--light-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .chart-name { font-weight: 700; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .chart-type-badge { background: var(--primary); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+  .chart-detail { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .chart-detail strong { color: var(--text); }
+
+  /* TABLE */
+  .guide-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  .guide-table th { background: var(--primary); color: #fff; padding: 9px 14px; text-align: left; font-weight: 600; }
+  .guide-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .guide-table tr:nth-child(even) td { background: var(--light-bg); }
+  .guide-table tr:last-child td { border-bottom: none; }
+
+  /* TAGS */
+  .tag { display: inline-block; background: var(--tag-bg); color: var(--primary); border: 1px solid #c0d0e8; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px; }
+  .tag-green { background: #e8f8ef; color: var(--green); border-color: #a9dfbf; }
+  .tag-orange { background: #fff0e0; color: #b7500a; border-color: #f0c080; }
+  .tag-red { background: #fce8e8; color: var(--red); border-color: #f0a0a0; }
+
+  /* CALLOUT */
+  .callout { border-left: 4px solid var(--accent); background: #fff8f0; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 13px; }
+  .callout-tip { border-color: var(--green); background: #f0f9f4; }
+  .callout-warn { border-color: var(--red); background: #fdf0f0; }
+  .callout-title { font-weight: 700; margin-bottom: 4px; }
+
+  /* LAYOUT DIAGRAM */
+  .layout-box { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; background: #fafbfc; }
+  .layout-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .layout-cell { border: 1px solid #b0c4de; border-radius: 6px; background: #e8f0fa; padding: 10px 14px; font-size: 12px; color: var(--primary); font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .cell-kpi { background: #d4e6f1; flex: 1; min-height: 60px; }
+  .cell-chart { background: #e8f0fa; }
+  .cell-wide { flex: 2; min-height: 200px; }
+  .cell-half { flex: 1; min-height: 200px; }
+  .cell-full { flex: 1; min-height: 200px; }
+  .cell-filter { background: #f0f0f0; color: #666; font-size: 11px; flex: 1; min-height: 40px; }
+
+  /* CONNECT GUIDE */
+  .connect-step { background: var(--light-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .connect-step h4 { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+
+  /* SCHEMA DIAGRAM */
+  .schema { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin: 16px 0; }
+  .schema-table { border: 2px solid var(--primary); border-radius: 8px; overflow: hidden; min-width: 160px; }
+  .schema-table.fact { border-color: var(--accent); }
+  .schema-header { background: var(--primary); color: #fff; padding: 8px 14px; font-size: 12px; font-weight: 700; }
+  .schema-table.fact .schema-header { background: var(--accent); }
+  .schema-field { padding: 5px 14px; border-bottom: 1px solid var(--border); font-size: 11px; font-family: 'Courier New', monospace; }
+  .schema-field.pk { color: var(--accent); font-weight: 700; }
+  .schema-field.fk { color: var(--green); }
+  .schema-arrow { display: flex; align-items: center; font-size: 20px; color: var(--muted); align-self: center; }
+
+  h3 { font-size: 15px; font-weight: 700; color: var(--primary); margin: 20px 0 12px; }
+  h4 { font-size: 13px; font-weight: 700; margin: 14px 0 8px; }
+  p { margin-bottom: 10px; color: var(--text); }
+  ul { padding-left: 18px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; font-size: 13px; color: var(--text); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 24px 20px; }
+    .hero { padding: 32px 20px; }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">📊 <span>Tableau</span> Guide</div>
+  <div class="nav-section">Tổng quan</div>
+  <a href="#connect" class="nav-item">1. Kết nối dữ liệu</a>
+  <a href="#schema" class="nav-item">2. Mô hình dữ liệu</a>
+  <a href="#prep" class="nav-item">3. Chuẩn bị trường</a>
+  <div class="nav-section">4 Dashboards</div>
+  <a href="#db1" class="nav-item">DB 1 – Executive Overview</a>
+  <a href="#db2" class="nav-item">DB 2 – Product & Discount</a>
+  <a href="#db3" class="nav-item">DB 3 – Customer RFM</a>
+  <a href="#db4" class="nav-item">DB 4 – Shipping & Ops</a>
+  <div class="nav-section">Hoàn thiện</div>
+  <a href="#filters" class="nav-item">5. Filter & Actions</a>
+  <a href="#design" class="nav-item">6. Design System</a>
+  <a href="#checklist" class="nav-item">7. Checklist</a>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="hero">
+    <h1>🗺️ Hướng Dẫn Xây Dựng Tableau Dashboard</h1>
+    <p>Hướng dẫn chi tiết từng bước để biến 10 Data Marts CSV thành 4 Dashboard chuyên nghiệp — từ kết nối dữ liệu đến layout & publish.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">51,252 giao dịch</span>
+      <span class="hero-tag">10 Data Marts</span>
+      <span class="hero-tag">4 Dashboards</span>
+      <span class="hero-tag">Star Schema</span>
+      <span class="hero-tag">RFM Segmentation</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════════════════════ SECTION 1: CONNECT ══════════════════════════════════ -->
+    <div class="section" id="connect">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div>
+          <div class="section-title">Kết nối & Load dữ liệu vào Tableau</div>
+          <div class="section-sub">Dùng Union / Relationship để ghép Star Schema + Data Marts</div>
+        </div>
+      </div>
+
+      <h3>📁 Danh sách file cần load</h3>
+      <table class="guide-table">
+        <tr><th>File CSV</th><th>Loại</th><th>Dùng cho Dashboard</th><th>Rows</th></tr>
+        <tr><td><strong>fact_sales.csv</strong></td><td><span class="tag">FACT</span></td><td>Tất cả dashboards (nền tảng)</td><td>51,252</td></tr>
+        <tr><td>dim_customer.csv</td><td><span class="tag-green">DIM</span></td><td>DB1, DB3</td><td>4,873</td></tr>
+        <tr><td>dim_product.csv</td><td><span class="tag-green">DIM</span></td><td>DB1, DB2</td><td>10,768</td></tr>
+        <tr><td>dim_location.csv</td><td><span class="tag-green">DIM</span></td><td>DB1, DB4</td><td>3,819</td></tr>
+        <tr><td>dim_time.csv</td><td><span class="tag-green">DIM</span></td><td>DB1, DB2</td><td>1,430</td></tr>
+        <tr><td>agg_rfm_segments.csv</td><td><span class="tag-orange">AGG</span></td><td>DB3 – Customer RFM</td><td>4,873</td></tr>
+        <tr><td>agg_product_pareto.csv</td><td><span class="tag-orange">AGG</span></td><td>DB2 – Product</td><td>17</td></tr>
+        <tr><td>agg_yoy_growth.csv</td><td><span class="tag-orange">AGG</span></td><td>DB1 – Executive</td><td>32</td></tr>
+        <tr><td>agg_discount_impact.csv</td><td><span class="tag-orange">AGG</span></td><td>DB2 – Discount</td><td>4</td></tr>
+        <tr><td>agg_cohort_retention.csv</td><td><span class="tag-orange">AGG</span></td><td>DB3 – Retention</td><td>2,304</td></tr>
+        <tr><td>agg_market_performance.csv</td><td><span class="tag-orange">AGG</span></td><td>DB1, DB4</td><td>28</td></tr>
+        <tr><td>agg_shipping_analysis.csv</td><td><span class="tag-orange">AGG</span></td><td>DB4 – Shipping</td><td>28</td></tr>
+        <tr><td>agg_segment_performance.csv</td><td><span class="tag-orange">AGG</span></td><td>DB3 – Segment</td><td>12</td></tr>
+        <tr><td>agg_discount_impact_by_category.csv</td><td><span class="tag-orange">AGG</span></td><td>DB2 – Discount Heatmap</td><td>12</td></tr>
+      </table>
+
+      <h3>🔌 Cách kết nối trong Tableau</h3>
+      <div class="connect-step">
+        <h4>Bước A – Mở Data Source cho Star Schema (cho các sheet tính toán linh hoạt)</h4>
+        <div class="steps">
+          <div class="step"><div class="step-body"><div class="step-title">Mở Tableau → Connect → Text File → chọn <code>fact_sales.csv</code></div><div class="step-desc">File fact_sales là trung tâm, load trước tiên.</div></div></div>
+          <div class="step"><div class="step-body"><div class="step-title">Kéo thêm <code>dim_customer.csv</code> vào canvas (dùng Relationship)</div><div class="step-code">fact_sales.customer_id  ←→  dim_customer.customer_id</div></div></div>
+          <div class="step"><div class="step-body"><div class="step-title">Kéo thêm <code>dim_product.csv</code></div><div class="step-code">fact_sales.product_id  ←→  dim_product.product_id</div></div></div>
+          <div class="step"><div class="step-body"><div class="step-title">Kéo thêm <code>dim_location.csv</code></div><div class="step-code">fact_sales.location_id  ←→  dim_location.location_id</div></div></div>
+          <div class="step"><div class="step-body"><div class="step-title">Kéo thêm <code>dim_time.csv</code></div><div class="step-code">fact_sales.order_date  ←→  dim_time.date  (đổi kiểu cả hai về Date)</div></div></div>
+        </div>
+        <div class="callout callout-tip"><div class="callout-title">💡 Lưu ý Relationship vs Join</div>Tableau 2020.2+ dùng <strong>Relationship</strong> (mặc định) thay vì Join. Relationship thông minh hơn — không nhân bản row khi có 1-nhiều. Chỉ dùng Join khi cần tính toán trực tiếp trong cùng 1 bảng.</div>
+      </div>
+
+      <div class="connect-step">
+        <h4>Bước B – Tạo Data Source riêng cho từng AGG file (tối ưu tốc độ)</h4>
+        <p style="font-size:13px; color: var(--muted);">Mỗi Dashboard nặng (RFM, Cohort, YoY) nên dùng Data Source riêng từ file AGG đã được pre-calculate, thay vì tính lại từ fact_sales.</p>
+        <div class="steps">
+          <div class="step"><div class="step-body"><div class="step-title">Data → New Data Source → chọn file AGG tương ứng</div><div class="step-desc">Ví dụ: Dashboard 3 dùng agg_rfm_segments.csv + agg_cohort_retention.csv riêng biệt.</div></div></div>
+          <div class="step"><div class="step-body"><div class="step-title">Đặt tên Data Source rõ ràng</div><div class="step-desc">"Star Schema", "RFM Data", "YoY Data", "Discount Data", "Shipping Data"</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ SECTION 2: SCHEMA ══════════════════════════════════ -->
+    <div class="section" id="schema">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div>
+          <div class="section-title">Sơ đồ quan hệ dữ liệu (Star Schema)</div>
+          <div class="section-sub">Cấu trúc kết nối giữa Fact và Dimension tables</div>
+        </div>
+      </div>
+
+      <div class="schema">
+        <div class="schema-table">
+          <div class="schema-header">📅 dim_time</div>
+          <div class="schema-field pk">🔑 date</div>
+          <div class="schema-field">year</div>
+          <div class="schema-field">quarter</div>
+          <div class="schema-field">month_name</div>
+          <div class="schema-field">is_weekend</div>
+        </div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-table fact">
+          <div class="schema-header">⚡ fact_sales (FACT)</div>
+          <div class="schema-field pk">🔑 order_id + product_id</div>
+          <div class="schema-field fk">🔗 customer_id</div>
+          <div class="schema-field fk">🔗 product_id</div>
+          <div class="schema-field fk">🔗 location_id</div>
+          <div class="schema-field fk">🔗 order_date</div>
+          <div class="schema-field">sales, profit</div>
+          <div class="schema-field">discount, quantity</div>
+          <div class="schema-field">shipping_cost</div>
+          <div class="schema-field">profit_margin</div>
+          <div class="schema-field">ship_delay_days</div>
+        </div>
+        <div class="schema-arrow">→</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="schema-table">
+            <div class="schema-header">👤 dim_customer</div>
+            <div class="schema-field pk">🔑 customer_id</div>
+            <div class="schema-field">customer_name</div>
+            <div class="schema-field">segment</div>
+          </div>
+          <div class="schema-table">
+            <div class="schema-header">📦 dim_product</div>
+            <div class="schema-field pk">🔑 product_id</div>
+            <div class="schema-field">category</div>
+            <div class="schema-field">sub_category</div>
+            <div class="schema-field">product_name</div>
+          </div>
+          <div class="schema-table">
+            <div class="schema-header">🌍 dim_location</div>
+            <div class="schema-field pk">🔑 location_id</div>
+            <div class="schema-field">market, region</div>
+            <div class="schema-field">country, state, city</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ SECTION 3: PREP ══════════════════════════════════ -->
+    <div class="section" id="prep">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div>
+          <div class="section-title">Chuẩn bị Calculated Fields & Parameters</div>
+          <div class="section-sub">Tạo sẵn các trường tính toán trước khi build chart</div>
+        </div>
+      </div>
+
+      <h3>📐 Calculated Fields cần tạo (từ Star Schema)</h3>
+      <table class="guide-table">
+        <tr><th>Tên Field</th><th>Công thức Tableau</th><th>Dùng cho</th></tr>
+        <tr><td><strong>Total Sales</strong></td><td><code>SUM([Sales])</code></td><td>Tất cả KPI</td></tr>
+        <tr><td><strong>Total Profit</strong></td><td><code>SUM([Profit])</code></td><td>Tất cả KPI</td></tr>
+        <tr><td><strong>Profit Margin %</strong></td><td><code>SUM([Profit]) / SUM([Sales])</code></td><td>DB1, DB2</td></tr>
+        <tr><td><strong>Loss Orders</strong></td><td><code>COUNTD(IF [Profit] < 0 THEN [Order Id] END)</code></td><td>DB1, DB2</td></tr>
+        <tr><td><strong>Loss Rate %</strong></td><td><code>[Loss Orders] / COUNTD([Order Id])</code></td><td>DB2</td></tr>
+        <tr><td><strong>Avg Order Value</strong></td><td><code>SUM([Sales]) / COUNTD([Order Id])</code></td><td>DB1, DB3</td></tr>
+        <tr><td><strong>Shipping Cost Ratio</strong></td><td><code>SUM([Shipping Cost]) / SUM([Sales])</code></td><td>DB4</td></tr>
+        <tr><td><strong>Is Loss Maker</strong></td><td><code>IF [Profit] < 0 THEN "Lỗ" ELSE "Lãi" END</code></td><td>DB2</td></tr>
+        <tr><td><strong>Discount Band</strong></td><td><code>IF [Discount]=0 THEN "0%" ELSEIF [Discount]<=0.1 THEN "0-10%" ELSEIF [Discount]<=0.3 THEN "10-30%" ELSEIF [Discount]<=0.5 THEN "30-50%" ELSE "50%+" END</code></td><td>DB2</td></tr>
+      </table>
+
+      <h3>🎛️ Parameters cần tạo</h3>
+      <table class="guide-table">
+        <tr><th>Parameter</th><th>Kiểu</th><th>Giá trị</th><th>Mục đích</th></tr>
+        <tr><td><strong>Select Year</strong></td><td>Integer</td><td>All, 2011, 2012, 2013, 2014</td><td>Filter toàn bộ dashboard</td></tr>
+        <tr><td><strong>Select Market</strong></td><td>String</td><td>All, APAC, EU, US, LATAM, EMEA, Africa, Canada</td><td>Drill down theo thị trường</td></tr>
+        <tr><td><strong>Select Metric</strong></td><td>String</td><td>Sales, Profit, Orders, Customers</td><td>Dynamic axis trên chart</td></tr>
+        <tr><td><strong>Top N Products</strong></td><td>Integer</td><td>5, 10, 17</td><td>Pareto chart top N</td></tr>
+      </table>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Format số quan trọng</div>
+        Sau khi tạo Calculated Field: Right-click → Default Properties → Number Format.<br>
+        • Sales/Profit → Currency ($), 0 decimal &nbsp;|&nbsp; Margin → Percentage, 1 decimal &nbsp;|&nbsp; Rate → Percentage, 1 decimal
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ DASHBOARD 1 ══════════════════════════════════ -->
+    <div class="section" id="db1">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div>
+          <div class="section-title">Dashboard 1 — Executive Overview</div>
+          <div class="section-sub">Tổng quan hiệu quả kinh doanh 2011–2014 cho C-Level</div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header blue">
+          <div class="db-icon blue-icon">📊</div>
+          <div>
+            <div class="db-title">Executive Business Overview</div>
+            <div class="db-purpose">Stakeholder: Ban Giám đốc (C-Level) | Data Source: agg_yoy_growth.csv + agg_market_performance.csv + fact_sales (Star Schema)</div>
+          </div>
+        </div>
+        <div class="db-card-body">
+
+          <h3>🗺️ Layout Dashboard</h3>
+          <div class="layout-box">
+            <div class="layout-row">
+              <div class="layout-cell cell-filter">🔽 Year Filter | Market Filter | Segment Filter</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-kpi">💰 Total Sales<br><small>$12.6M</small></div>
+              <div class="layout-cell cell-kpi">📈 Total Profit<br><small>$1.46M</small></div>
+              <div class="layout-cell cell-kpi">% Margin<br><small>11.6%</small></div>
+              <div class="layout-cell cell-kpi">🛒 Total Orders<br><small>25,035</small></div>
+              <div class="layout-cell cell-kpi">❌ Loss Rate<br><small>24.5%</small></div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-wide">📉 Line Chart: Doanh thu & Lợi nhuận theo năm (YoY)</div>
+              <div class="layout-cell cell-half">🍩 Donut: Doanh thu theo Category</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-half">🗺️ Map: Profit Margin theo Market</div>
+              <div class="layout-cell cell-half">📊 Bar: Top 10 Sub-Category by Sales</div>
+              <div class="layout-cell cell-half">📊 Bar: Top 10 Sub-Category by Profit</div>
+            </div>
+          </div>
+
+          <h3>📋 Chi tiết từng biểu đồ</h3>
+          <div class="charts-grid">
+
+            <div class="chart-card">
+              <div class="chart-name">KPI Tiles (5 thẻ số liệu)<span class="chart-type-badge">TEXT/BAN NUMBER</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> fact_sales (Star Schema)<br>
+                <strong>Rows:</strong> Để trống &nbsp;|&nbsp; <strong>Columns:</strong> Để trống<br>
+                <strong>Text:</strong> [Total Sales] hoặc [Total Profit]<br>
+                <strong>Cách tạo:</strong> Show Mark Labels → chỉ giữ Text mark → Tắt all axes & headers. Tạo 5 sheet riêng, mỗi sheet 1 KPI. Kéo vào Dashboard dạng floating hoặc tiled ở hàng trên cùng.<br>
+                <strong>Format màu:</strong> Sales = Xanh navy | Profit = Xanh lá | Margin = Xanh dương | Loss Rate = Đỏ
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Line Chart – YoY Trend<span class="chart-type-badge">LINE</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_yoy_growth.csv<br>
+                <strong>Columns:</strong> order_year (Discrete)<br>
+                <strong>Rows:</strong> total_sales, total_profit (Dual Axis)<br>
+                <strong>Color:</strong> Đường sales = #1a4a7a | Đường profit = #1e8449<br>
+                <strong>Thêm:</strong> Mark Labels bật → hiện % growth bên cạnh mỗi điểm<br>
+                <strong>Filter:</strong> market = "ALL" để lấy global trend<br>
+                <strong>Insight cần hiện:</strong> Annotation "Doanh thu +90% | Margin chỉ +0.74%" tại năm 2014
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Donut Chart – Sales by Category<span class="chart-type-badge">PIE/DONUT</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> fact_sales + dim_product<br>
+                <strong>Columns:</strong> SUM(Sales) &nbsp;|&nbsp; <strong>Rows:</strong> để trống<br>
+                <strong>Mark:</strong> Chuyển sang Pie → kéo Category vào Color, SUM(Sales) vào Angle<br>
+                <strong>Donut trick:</strong> Dual axis với một vòng tròn trắng rỗng ở giữa (size ~40%)<br>
+                <strong>Màu:</strong> Furniture = #e8760a | Office Supplies = #1a4a7a | Technology = #27ae60<br>
+                <strong>Label:</strong> Hiện % và tên Category
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Map – Profit Margin by Market<span class="chart-type-badge">MAP</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_market_performance.csv<br>
+                <strong>Cách tạo:</strong> Double-click vào trường <strong>country</strong> → Tableau tự tạo map<br>
+                <strong>Color:</strong> profit_margin_pct → Diverging scale (đỏ-trắng-xanh)<br>
+                <strong>Tooltip:</strong> Hiện Market, Total Sales, Total Profit, Margin %<br>
+                <strong>Thêm Filter:</strong> order_year → cho phép drill theo năm<br>
+                <strong>Chú ý:</strong> EMEA cần nổi bật với màu đỏ (margin 5.4% thấp nhất)
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar Chart – Top Sub-Category by Sales<span class="chart-type-badge">HORIZONTAL BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> fact_sales + dim_product<br>
+                <strong>Rows:</strong> sub_category (sort desc by Sales)<br>
+                <strong>Columns:</strong> SUM(Sales)<br>
+                <strong>Color:</strong> Dùng field [Is Loss Maker] → Lỗ = đỏ, Lãi = xanh<br>
+                <strong>Reference Line:</strong> Add Average line để thấy sub-category nào vượt/dưới trung bình<br>
+                <strong>Tip:</strong> Dùng Parameter "Top N" để hiển thị top 5/10/17
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Stacked Bar – Sales by Segment & Year<span class="chart-type-badge">STACKED BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_segment_performance.csv<br>
+                <strong>Columns:</strong> order_year &nbsp;|&nbsp; <strong>Rows:</strong> total_sales<br>
+                <strong>Color:</strong> segment (Consumer/Corporate/Home Office)<br>
+                <strong>Màu:</strong> Consumer=#1a4a7a | Corporate=#27ae60 | Home Office=#e8760a<br>
+                <strong>Label:</strong> Bật label trên mỗi segment stack<br>
+                <strong>Insight:</strong> Consumer luôn chiếm >50% mọi năm
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ DASHBOARD 2 ══════════════════════════════════ -->
+    <div class="section" id="db2">
+      <div class="section-header">
+        <div class="section-num" style="background:#e8760a;">2</div>
+        <div>
+          <div class="section-title">Dashboard 2 — Product & Discount Analysis</div>
+          <div class="section-sub">Phân tích sản phẩm lỗ & bẫy giảm giá cho CFO</div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header orange">
+          <div class="db-icon orange-icon">💰</div>
+          <div>
+            <div class="db-title">Profitability & Discount Impact</div>
+            <div class="db-purpose">Stakeholder: CFO | Data Source: agg_product_pareto.csv + agg_discount_impact.csv + agg_discount_impact_by_category.csv</div>
+          </div>
+        </div>
+        <div class="db-card-body">
+
+          <h3>🗺️ Layout Dashboard</h3>
+          <div class="layout-box">
+            <div class="layout-row">
+              <div class="layout-cell cell-filter">🔽 Category Filter | Sub-Category Filter | Year Filter</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-kpi">📉 Loss Rate<br><small>24.5%</small></div>
+              <div class="layout-cell cell-kpi">💸 Revenue at Risk<br><small>at Discount>30%</small></div>
+              <div class="layout-cell cell-kpi">⚠️ Avg Discount<br><small>14.3%</small></div>
+              <div class="layout-cell cell-kpi">🔴 Loss Sub-cats<br><small>Tables, Bookcases</small></div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-wide">📊 Pareto Chart: 80/20 Sub-Category Profit</div>
+              <div class="layout-cell cell-half">📈 Bar+Line: Discount Band vs Loss Rate & Avg Profit</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-half">🔥 Heatmap: Discount × Category Loss Rate</div>
+              <div class="layout-cell cell-half">📊 Scatter: Discount vs Profit Margin (mỗi chấm = 1 sub-category)</div>
+              <div class="layout-cell cell-half">📊 Waterfall: Profit by Sub-Category (lỗ/lãi)</div>
+            </div>
+          </div>
+
+          <h3>📋 Chi tiết từng biểu đồ</h3>
+          <div class="charts-grid">
+
+            <div class="chart-card">
+              <div class="chart-name">Pareto Chart – 80/20 Product<span class="chart-type-badge">BAR + LINE DUAL AXIS</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_product_pareto.csv<br>
+                <strong>Columns:</strong> sub_category (sort desc by total_profit)<br>
+                <strong>Rows – Axis 1:</strong> total_profit (Bar)<br>
+                <strong>Rows – Axis 2:</strong> cumulative_pct (Line)<br>
+                <strong>Color bars:</strong> is_top80 → TRUE = xanh (#1a4a7a) | FALSE = xám (#95a5a6)<br>
+                <strong>Reference line trên Line axis:</strong> Constant = 80 (đường ngang 80%)<br>
+                <strong>Annotation:</strong> "7/17 sub-categories = 80% lợi nhuận"
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar+Line – Discount Impact<span class="chart-type-badge">COMBO DUAL AXIS</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_discount_impact.csv<br>
+                <strong>Columns:</strong> discount_band (thứ tự: 0-10%, 10-30%, 30-50%, 50%+)<br>
+                <strong>Rows – Bar:</strong> avg_profit (Bar, màu theo giá trị: xanh nếu >0, đỏ nếu <0)<br>
+                <strong>Rows – Line:</strong> loss_rate_pct (Line màu cam)<br>
+                <strong>Reference line:</strong> Constant = 0 trên Profit axis<br>
+                <strong>Annotations cần có:</strong> "30%+ → 87% đơn lỗ" và "50%+ → 100% lỗ"
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Heatmap – Discount × Category<span class="chart-type-badge">HIGHLIGHT TABLE</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_discount_impact_by_category.csv<br>
+                <strong>Columns:</strong> discount_band<br>
+                <strong>Rows:</strong> category<br>
+                <strong>Color:</strong> loss_rate_pct → Sequential scale (trắng → đỏ đậm)<br>
+                <strong>Text:</strong> loss_rate_pct (hiện số % trong ô)<br>
+                <strong>Mark:</strong> Square → Highlight Table<br>
+                <strong>Insight nổi bật:</strong> Ô Furniture × 50%+ phải là đỏ đậm nhất
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Scatter Plot – Discount vs Margin<span class="chart-type-badge">SCATTER</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> fact_sales + dim_product (Star Schema)<br>
+                <strong>Columns:</strong> AVG(discount) &nbsp;|&nbsp; <strong>Rows:</strong> AVG(profit_margin)<br>
+                <strong>Detail:</strong> sub_category (mỗi chấm = 1 sub-category)<br>
+                <strong>Color:</strong> category &nbsp;|&nbsp; <strong>Size:</strong> SUM(sales)<br>
+                <strong>Label:</strong> sub_category name<br>
+                <strong>Reference Line:</strong> Constant profit_margin = 0 (đường ngang 0)<br>
+                <strong>Chú ý:</strong> Tables sẽ nằm góc phần tư dưới-phải (discount cao, margin âm)
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Waterfall Chart – Profit by Sub-Category<span class="chart-type-badge">GANTT / WATERFALL</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_product_pareto.csv<br>
+                <strong>Cách tạo Waterfall trong Tableau:</strong><br>
+                1. Columns: sub_category (sort desc) &nbsp;|&nbsp; Rows: total_profit<br>
+                2. Mark: Bar<br>
+                3. Color: Calculated Field = IF total_profit >= 0 THEN "Lãi" ELSE "Lỗ" END<br>
+                4. Màu: Lãi = xanh (#27ae60) | Lỗ = đỏ (#c0392b)<br>
+                <strong>Result:</strong> Thấy ngay Tables (-$64K) là điểm đen lớn nhất
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – Revenue at Risk per Discount Band<span class="chart-type-badge">HORIZONTAL BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_discount_impact.csv<br>
+                <strong>Rows:</strong> discount_band &nbsp;|&nbsp; <strong>Columns:</strong> revenue_at_risk<br>
+                <strong>Color:</strong> discount_band → dải màu từ xanh (0-10%) đến đỏ đậm (50%+)<br>
+                <strong>Label:</strong> Format "$XXX,XXX" trên mỗi bar<br>
+                <strong>Annotation:</strong> "~$412K thiệt hại từ nhóm 50%+ trong 4 năm"<br>
+                <strong>Reference line:</strong> Average
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ DASHBOARD 3 ══════════════════════════════════ -->
+    <div class="section" id="db3">
+      <div class="section-header">
+        <div class="section-num" style="background:#1e8449;">3</div>
+        <div>
+          <div class="section-title">Dashboard 3 — Customer Segmentation (RFM)</div>
+          <div class="section-sub">Phân khúc 4,873 khách hàng + tỷ lệ giữ chân cho CMO</div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header green-bg">
+          <div class="db-icon green-icon">👥</div>
+          <div>
+            <div class="db-title">Customer RFM Segmentation & Cohort Retention</div>
+            <div class="db-purpose">Stakeholder: CMO / Marketing | Data Source: agg_rfm_segments.csv + agg_cohort_retention.csv + agg_segment_performance.csv</div>
+          </div>
+        </div>
+        <div class="db-card-body">
+
+          <h3>🗺️ Layout Dashboard</h3>
+          <div class="layout-box">
+            <div class="layout-row">
+              <div class="layout-cell cell-filter">🔽 Segment Filter | RFM Score Filter | Market Filter</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-kpi">👥 Total Customers<br><small>4,873</small></div>
+              <div class="layout-cell cell-kpi">🏆 Champions<br><small>719 (14.7%)</small></div>
+              <div class="layout-cell cell-kpi">⚠️ Can't Lose<br><small>607 (12.5%)</small></div>
+              <div class="layout-cell cell-kpi">😴 At Risk<br><small>721 (14.8%)</small></div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-wide">🌳 Treemap: Customer Segments (size=customers, color=avg_monetary)</div>
+              <div class="layout-cell cell-half">📊 Bar: Segment Summary (count, avg_monetary)</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-full" style="min-height:300px;">🔥 Heatmap (Cohort Retention Matrix) – trục X: cohort_index, trục Y: cohort_month</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-wide">🔵 Scatter: R vs M (chấm = khách hàng, màu = segment)</div>
+              <div class="layout-cell cell-half">📊 Stacked Bar: Segment by Year (Consumer/Corp/HO)</div>
+            </div>
+          </div>
+
+          <h3>📋 Chi tiết từng biểu đồ</h3>
+          <div class="charts-grid">
+
+            <div class="chart-card">
+              <div class="chart-name">Treemap – RFM Segments<span class="chart-type-badge">TREEMAP</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_rfm_segments.csv (group by segment)<br>
+                <strong>Tạo bảng tóm tắt:</strong> Cần tạo một view aggregate trong Tableau: group segment → COUNT(customer_id), AVG(monetary)<br>
+                <strong>Size:</strong> COUNT(customer_id) &nbsp;|&nbsp; <strong>Color:</strong> AVG(monetary)<br>
+                <strong>Color Scale:</strong> Sequential (#f7dc6f → #1a4a7a), cao = đậm<br>
+                <strong>Label:</strong> Segment name + count + "$XXX avg"<br>
+                <strong>Màu nền từng ô theo segment:</strong> Champions=#1a4a7a, Loyal=#27ae60, At Risk=#e67e22, Lost=#c0392b, Can't Lose Them=#e74c3c
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Cohort Retention Heatmap<span class="chart-type-badge">HIGHLIGHT TABLE</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_cohort_retention.csv<br>
+                <strong>Columns:</strong> cohort_index (0 → max, Discrete)<br>
+                <strong>Rows:</strong> cohort_month (Discrete, sort asc)<br>
+                <strong>Color:</strong> retention_rate → Sequential (trắng=0% → đậm=100%)<br>
+                <strong>Text:</strong> retention_pct (hiện % trong ô)<br>
+                <strong>Mark:</strong> Square<br>
+                <strong>Cột 0:</strong> Luôn = 100% (tháng đầu). Chú ý cột 1, 2, 3 để xem retention tháng tiếp<br>
+                <strong>Filter NULL:</strong> Exclude NULL retention_rate để bảng gọn hơn
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Scatter – R (Recency) vs M (Monetary)<span class="chart-type-badge">SCATTER</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_rfm_segments.csv<br>
+                <strong>Columns:</strong> recency &nbsp;|&nbsp; <strong>Rows:</strong> monetary<br>
+                <strong>Detail:</strong> customer_id (mỗi chấm = 1 KH)<br>
+                <strong>Color:</strong> segment<br>
+                <strong>Size:</strong> frequency<br>
+                <strong>Reference Lines:</strong> Median Recency (dọc) + Median Monetary (ngang) → chia 4 góc phần tư<br>
+                <strong>Annotation tại 4 góc:</strong> "VIP" | "Tiềm năng" | "Đang rời" | "Đã mất"<br>
+                <strong>Tooltip:</strong> customer_name, rfm_score, segment
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – Segment Summary Comparison<span class="chart-type-badge">GROUPED BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_rfm_segments.csv (group by segment)<br>
+                <strong>Rows:</strong> segment (sort by avg_monetary desc)<br>
+                <strong>Columns:</strong> Có 2 cách: (a) Dual axis avg_monetary + count, hoặc (b) 2 charts side by side<br>
+                <strong>Color:</strong> theo segment như treemap<br>
+                <strong>Annotate "Can't Lose Them":</strong> "607 KH × $4,032 = ~$2.4M LTV tiềm năng!"<br>
+                <strong>Insight nổi bật:</strong> So sánh avg_recency — Champions (31 ngày) vs Can't Lose Them (309 ngày)
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Line – Unique Customers by Year per Segment<span class="chart-type-badge">LINE MULTI-SERIES</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_segment_performance.csv<br>
+                <strong>Columns:</strong> order_year &nbsp;|&nbsp; <strong>Rows:</strong> unique_customers<br>
+                <strong>Color:</strong> segment (3 đường: Consumer, Corporate, Home Office)<br>
+                <strong>Markers:</strong> Bật để thấy từng điểm<br>
+                <strong>Label:</strong> cuối mỗi đường<br>
+                <strong>Insight:</strong> Consumer tăng đều đặn, Home Office tăng nhanh nhất % theo năm
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – RFM Score Distribution<span class="chart-type-badge">HISTOGRAM / BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_rfm_segments.csv<br>
+                <strong>Columns:</strong> rfm_score (Discrete) — sort DESC<br>
+                <strong>Rows:</strong> COUNT(customer_id)<br>
+                <strong>Color:</strong> segment<br>
+                <strong>Mục đích:</strong> Thấy phân bổ score, "555" = Champions nhiều nhất<br>
+                <strong>Filter:</strong> Chỉ show top 20 score phổ biến nhất
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ DASHBOARD 4 ══════════════════════════════════ -->
+    <div class="section" id="db4">
+      <div class="section-header">
+        <div class="section-num" style="background:#7d3c98;">4</div>
+        <div>
+          <div class="section-title">Dashboard 4 — Shipping & Operations</div>
+          <div class="section-sub">Hiệu suất giao hàng & Market Performance cho Operations Manager</div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header purple">
+          <div class="db-icon purple-icon">🚚</div>
+          <div>
+            <div class="db-title">Shipping Performance & Market Analysis</div>
+            <div class="db-purpose">Stakeholder: Ops Manager | Data Source: agg_shipping_analysis.csv + agg_shipping_by_priority.csv + agg_market_performance.csv</div>
+          </div>
+        </div>
+        <div class="db-card-body">
+
+          <h3>🗺️ Layout Dashboard</h3>
+          <div class="layout-box">
+            <div class="layout-row">
+              <div class="layout-cell cell-filter">🔽 Ship Mode | Market | Year | Order Priority</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-kpi">⏱️ Avg Delay<br><small>4.0 ngày</small></div>
+              <div class="layout-cell cell-kpi">💸 Avg Ship Cost<br><small>$26.4</small></div>
+              <div class="layout-cell cell-kpi">📦 Total Orders<br><small>51,252</small></div>
+              <div class="layout-cell cell-kpi">🗺️ Markets<br><small>7 thị trường</small></div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-wide">🗺️ Bubble Map: Market Performance (size=sales, color=profit_margin)</div>
+              <div class="layout-cell cell-half">📊 Bar: Avg Delay by Ship Mode</div>
+            </div>
+            <div class="layout-row">
+              <div class="layout-cell cell-half">🔥 Heatmap: Priority × Ship Mode (avg delay)</div>
+              <div class="layout-cell cell-half">📊 Bar: Shipping Cost by Market</div>
+              <div class="layout-cell cell-half">📈 Line: Market Growth YoY (multi-series)</div>
+            </div>
+          </div>
+
+          <h3>📋 Chi tiết từng biểu đồ</h3>
+          <div class="charts-grid">
+
+            <div class="chart-card">
+              <div class="chart-name">Bubble Map – Market Performance<span class="chart-type-badge">MAP + CIRCLES</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_market_performance.csv<br>
+                <strong>Cách tạo:</strong> Double-click "country" hoặc dùng lat/long của thủ đô từng market<br>
+                <strong>Size:</strong> total_sales (bubble to lớn = doanh thu cao)<br>
+                <strong>Color:</strong> profit_margin_pct → Diverging (đỏ &lt;8% | trắng 12% | xanh &gt;16%)<br>
+                <strong>Label:</strong> Market name + Margin %<br>
+                <strong>Chú ý:</strong> EMEA bubble màu đỏ nổi bật (5.4% margin), Canada màu xanh đậm nhất (26.6%)<br>
+                <strong>Tooltip:</strong> Market, Sales, Profit, Margin, YoY Growth
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – Avg Delay by Ship Mode<span class="chart-type-badge">HORIZONTAL BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_shipping_analysis.csv (group by ship_mode)<br>
+                <strong>Rows:</strong> ship_mode &nbsp;|&nbsp; <strong>Columns:</strong> avg_delay_days<br>
+                <strong>Sort:</strong> Ascending (Same Day lên đầu)<br>
+                <strong>Color:</strong> avg_delay_days → Sequential (xanh=nhanh, đỏ=chậm)<br>
+                <strong>Reference line:</strong> Average tất cả ship mode<br>
+                <strong>Annotation:</strong> "Same Day: 0.04 ngày" và "Standard: 5.0 ngày"
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Heatmap – Priority × Ship Mode<span class="chart-type-badge">HIGHLIGHT TABLE</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_shipping_by_priority.csv<br>
+                <strong>Columns:</strong> ship_mode &nbsp;|&nbsp; <strong>Rows:</strong> order_priority<br>
+                <strong>Color:</strong> avg_delay_days → Sequential (trắng → đỏ)<br>
+                <strong>Text:</strong> avg_delay_days (hiện số trong ô)<br>
+                <strong>Insight cần thấy:</strong> Critical orders dùng Standard Class có delay bất thường không?
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Multi-Line – Market Sales YoY<span class="chart-type-badge">LINE MULTI-SERIES</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_market_performance.csv<br>
+                <strong>Columns:</strong> order_year &nbsp;|&nbsp; <strong>Rows:</strong> total_sales<br>
+                <strong>Color:</strong> market (7 màu khác nhau)<br>
+                <strong>Filter:</strong> Exclude market = "ALL"<br>
+                <strong>Label:</strong> cuối mỗi đường<br>
+                <strong>Chú ý:</strong> APAC và EU là 2 đường cao nhất, Canada thấp nhất nhưng tăng đều
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – Shipping Cost by Market<span class="chart-type-badge">GROUPED BAR</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_shipping_analysis.csv<br>
+                <strong>Columns:</strong> market &nbsp;|&nbsp; <strong>Rows:</strong> avg_shipping_cost<br>
+                <strong>Color:</strong> ship_mode (4 màu)<br>
+                <strong>Mark:</strong> Grouped Bar (không stack)<br>
+                <strong>Insight:</strong> Market nào đang chi phí ship cao bất thường?<br>
+                <strong>Tooltip:</strong> total_shipping_cost + avg_shipping_cost + total_orders
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-name">Bar – Market Margin Comparison<span class="chart-type-badge">BAR + REFERENCE</span></div>
+              <div class="chart-detail">
+                <strong>Data Source:</strong> agg_market_performance.csv (group by market)<br>
+                <strong>Rows:</strong> market &nbsp;|&nbsp; <strong>Columns:</strong> SUM(total_profit)/SUM(total_sales) = Margin<br>
+                <strong>Sort:</strong> Desc<br>
+                <strong>Color:</strong> profit_margin_pct — EMEA nổi bật màu đỏ<br>
+                <strong>Reference line:</strong> Average = 11.7% (đường dọc)<br>
+                <strong>Annotation:</strong> "EMEA 5.4% — cần điều tra" và "Canada 26.6% — hiệu quả cao nhất"
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ SECTION 5: FILTERS ══════════════════════════════════ -->
+    <div class="section" id="filters">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div>
+          <div class="section-title">Filter & Dashboard Actions</div>
+          <div class="section-sub">Cách tạo interactivity — click 1 chart để filter chart khác</div>
+        </div>
+      </div>
+
+      <h3>🔗 Global Filters (Apply to All)</h3>
+      <table class="guide-table">
+        <tr><th>Filter</th><th>Cách tạo</th><th>Apply to</th></tr>
+        <tr><td><strong>Year Filter</strong></td><td>Kéo order_year → Filters shelf → Show Filter → "Single value (dropdown)"</td><td>All worksheets using this data source</td></tr>
+        <tr><td><strong>Market Filter</strong></td><td>Kéo market → Filters → Show Filter → "Multiple values (list)"</td><td>All worksheets</td></tr>
+        <tr><td><strong>Category Filter</strong></td><td>Kéo category → Filters → Show Filter → "Multiple values (dropdown)"</td><td>DB2 worksheets</td></tr>
+        <tr><td><strong>Segment Filter</strong></td><td>Kéo segment → Filters → Show Filter</td><td>DB3 worksheets</td></tr>
+      </table>
+
+      <h3>⚡ Dashboard Actions (Interactivity)</h3>
+      <div class="connect-step">
+        <h4>Cách tạo Filter Action trong Dashboard:</h4>
+        <p style="font-size:13px;">Dashboard menu → Actions → Add Action → Filter</p>
+        <table class="guide-table">
+          <tr><th>Source Sheet</th><th>Khi nào chạy</th><th>Target Sheet</th><th>Tác dụng</th></tr>
+          <tr><td>Market Map (DB1)</td><td>Select</td><td>YoY Line Chart</td><td>Click vào 1 market → line chart chỉ hiện market đó</td></tr>
+          <tr><td>Category Donut (DB1)</td><td>Select</td><td>Sub-Category Bar</td><td>Click Furniture → bar chỉ hiện sub-cats của Furniture</td></tr>
+          <tr><td>Treemap RFM (DB3)</td><td>Select</td><td>Scatter R vs M</td><td>Click "At Risk" → scatter chỉ hiện KH At Risk</td></tr>
+          <tr><td>Pareto Bar (DB2)</td><td>Select</td><td>Scatter Discount (DB2)</td><td>Click Tables → scatter highlight riêng Tables</td></tr>
+          <tr><td>Ship Mode Bar (DB4)</td><td>Select</td><td>Market Shipping Cost</td><td>Click Standard Class → cost bar filter theo mode</td></tr>
+        </table>
+      </div>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Highlight Action vs Filter Action</div>
+        <strong>Filter Action:</strong> Click → loại bỏ dữ liệu khác (chỉ còn cái được chọn)<br>
+        <strong>Highlight Action:</strong> Click → làm nổi bật cái được chọn, mờ các cái còn lại (không mất data)<br>
+        → Nên dùng <strong>Highlight</strong> cho Scatter & Map để không mất context tổng thể.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ SECTION 6: DESIGN ══════════════════════════════════ -->
+    <div class="section" id="design">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div>
+          <div class="section-title">Design System & Formatting</div>
+          <div class="section-sub">Bảng màu, font, layout để dashboard trông chuyên nghiệp</div>
+        </div>
+      </div>
+
+      <h3>🎨 Bảng màu chính</h3>
+      <table class="guide-table">
+        <tr><th>Màu</th><th>Mã Hex</th><th>Dùng cho</th></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#1a4a7a;border-radius:3px;vertical-align:middle;margin-right:8px;"></span>Navy Blue</td><td>#1a4a7a</td><td>Primary bars, headers, KPI numbers</td></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#e8760a;border-radius:3px;vertical-align:middle;margin-right:8px;"></span>Orange</td><td>#e8760a</td><td>Warnings, Discount alerts, accent</td></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#1e8449;border-radius:3px;vertical-align:middle;margin-right:8px;"></span>Green</td><td>#1e8449</td><td>Positive profit, Loyal customers</td></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#c0392b;border-radius:3px;vertical-align:middle;margin-right:8px;"></span>Red</td><td>#c0392b</td><td>Loss, danger zones, EMEA flag</td></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#f4f7fb;border-radius:3px;vertical-align:middle;margin-right:8px;border:1px solid #ddd;"></span>Light Gray</td><td>#f4f7fb</td><td>Dashboard background</td></tr>
+        <tr><td><span style="display:inline-block;width:20px;height:20px;background:#2c3e50;border-radius:3px;vertical-align:middle;margin-right:8px;"></span>Dark Text</td><td>#2c3e50</td><td>All text labels, tooltips</td></tr>
+      </table>
+
+      <h3>📝 Typography & Formatting</h3>
+      <table class="guide-table">
+        <tr><th>Element</th><th>Font</th><th>Size</th><th>Style</th></tr>
+        <tr><td>Dashboard Title</td><td>Arial / Tableau Book</td><td>18px</td><td>Bold, #1a4a7a</td></tr>
+        <tr><td>KPI Number</td><td>Arial</td><td>28px</td><td>Bold, màu tương ứng</td></tr>
+        <tr><td>KPI Label</td><td>Arial</td><td>11px</td><td>Regular, #6c7a89</td></tr>
+        <tr><td>Chart Title</td><td>Arial</td><td>13px</td><td>Bold</td></tr>
+        <tr><td>Axis Labels</td><td>Arial</td><td>10px</td><td>Regular</td></tr>
+        <tr><td>Tooltip</td><td>Arial</td><td>11px</td><td>Regular</td></tr>
+      </table>
+
+      <h3>🖥️ Dashboard Size & Layout</h3>
+      <div class="connect-step">
+        <h4>Cài đặt kích thước Dashboard:</h4>
+        <p style="font-size:13px;">Dashboard menu → Size → Fixed → <strong>1366 × 768</strong> (widescreen laptop) hoặc <strong>1920 × 1080</strong> (Full HD)</p>
+        <ul style="font-size:13px; margin-top:8px;">
+          <li>Sử dụng <strong>Tiled layout</strong> (không floating) để dashboard responsive hơn</li>
+          <li>Header row cao ~60px cho KPI tiles</li>
+          <li>Padding: 8px giữa các containers</li>
+          <li>Background mỗi chart: #ffffff với border nhẹ #e0e0e0</li>
+          <li>Dashboard background: #f4f7fb</li>
+        </ul>
+      </div>
+
+      <h3>🏷️ Tooltip Templates</h3>
+      <div class="connect-step">
+        <h4>Cách viết Tooltip chuyên nghiệp:</h4>
+        <p style="font-size:13px;">Worksheet → Tooltip → Edit (dùng Insert để thêm field động)</p>
+        <div class="step-code">
+📦 Sub-Category: &lt;Sub Category&gt;
+💰 Total Profit: &lt;SUM(Profit)&gt;
+📉 Profit Margin: &lt;AGG(Profit Margin %)&gt;
+⚠️ Loss Rate: &lt;AGG(Loss Rate %)&gt;
+🎯 Avg Discount: &lt;AVG(Discount)&gt;
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ SECTION 7: CHECKLIST ══════════════════════════════════ -->
+    <div class="section" id="checklist">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div>
+          <div class="section-title">Checklist Hoàn Thiện Trước Khi Nộp</div>
+          <div class="section-sub">Kiểm tra từng hạng mục để đảm bảo dashboard hoàn chỉnh</div>
+        </div>
+      </div>
+
+      <table class="guide-table">
+        <tr><th>#</th><th>Hạng mục</th><th>Kiểm tra</th></tr>
+        <tr><td>1</td><td><strong>Data Connection</strong></td><td>Tất cả 14 file CSV đã load thành công, không báo lỗi</td></tr>
+        <tr><td>2</td><td><strong>Relationships</strong></td><td>4 Dim tables đã join đúng với fact_sales qua đúng key</td></tr>
+        <tr><td>3</td><td><strong>KPI Tiles</strong></td><td>5 KPI tiles DB1 hiện số đúng: Sales $12.6M, Profit $1.46M, Margin 11.6%, Orders 25K+, Loss Rate 24.5%</td></tr>
+        <tr><td>4</td><td><strong>Pareto Chart</strong></td><td>Đường cumulative chạm 80% đúng tại cột thứ 7 (Storage)</td></tr>
+        <tr><td>5</td><td><strong>Discount Heatmap</strong></td><td>Ô 50%+ màu đỏ đậm nhất, Ô 0-10% màu nhạt nhất</td></tr>
+        <tr><td>6</td><td><strong>RFM Treemap</strong></td><td>Champions 719 KH là ô lớn nhất, Lost 607 KH màu nhạt</td></tr>
+        <tr><td>7</td><td><strong>Cohort Heatmap</strong></td><td>Cột 0 tất cả = 100%, màu đậm nhất; các cột tiếp theo nhạt dần</td></tr>
+        <tr><td>8</td><td><strong>Market Map</strong></td><td>EMEA hiển thị đỏ, Canada hiển thị xanh đậm nhất</td></tr>
+        <tr><td>9</td><td><strong>Filter Actions</strong></td><td>Click từng chart → charts liên quan filter đúng</td></tr>
+        <tr><td>10</td><td><strong>Format số</strong></td><td>Currency có "$", Percentage có "%", không có số thập phân thừa</td></tr>
+        <tr><td>11</td><td><strong>Titles</strong></td><td>Mỗi worksheet có title mô tả rõ nội dung</td></tr>
+        <tr><td>12</td><td><strong>Tooltips</strong></td><td>Hover vào mọi chart đều có tooltip có nghĩa</td></tr>
+        <tr><td>13</td><td><strong>Colors consistent</strong></td><td>Cùng 1 segment/category dùng cùng 1 màu xuyên suốt 4 dashboards</td></tr>
+        <tr><td>14</td><td><strong>Navigation</strong></td><td>Có nút/tab để chuyển giữa 4 dashboards (dùng Button object)</td></tr>
+        <tr><td>15</td><td><strong>Annotations</strong></td><td>Các insight quan trọng (Discount Trap, EMEA alert) đã có annotation</td></tr>
+      </table>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠️ Lỗi thường gặp cần tránh</div>
+        <ul>
+          <li><strong>Không set Fixed Size</strong> cho Dashboard → layout vỡ khi mở trên màn hình khác</li>
+          <li><strong>Dùng Join thay Relationship</strong> với 1-nhiều → bị nhân bản dòng, số sai</li>
+          <li><strong>Không format số</strong> → KPI hiện 12627507 thay vì $12.6M</li>
+          <li><strong>Màu không nhất quán</strong> → Furniture = cam ở DB1 nhưng xanh ở DB2</li>
+          <li><strong>Filter Apply to "Only This Worksheet"</strong> → click filter không ảnh hưởng charts khác</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-tip" style="margin-top:24px;">
+        <div class="callout-title">🚀 Tips để Dashboard trông "thật" hơn</div>
+        <ul>
+          <li>Thêm <strong>Executive Summary text box</strong> đầu mỗi dashboard: 2–3 câu key insight</li>
+          <li>Dùng <strong>Image object</strong> để thêm logo hoặc banner màu ở header</li>
+          <li>Thêm <strong>Navigation buttons</strong> (DB1 → DB2 → DB3 → DB4) bằng Button object</li>
+          <li>Dùng <strong>Device Preview</strong> để kiểm tra layout trên các màn hình khác nhau</li>
+          <li>Publish lên <strong>Tableau Public</strong> → có link chia sẻ chuyên nghiệp</li>
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
